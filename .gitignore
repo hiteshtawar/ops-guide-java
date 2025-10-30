@@ -1,0 +1,20 @@
+# Java
+/target/
+*.class
+*.log
+*.tmp
+*.swp
+.DS_Store
+.idea/
+.vscode/
+.project
+.classpath
+.settings/
+.mvn/wrapper/maven-wrapper.jar
+# Build outputs
+*.iml
+# OS
+Thumbs.db
+# Node (if UI present)
+node_modules/
+*.lock

@@ -1,0 +1,41 @@
+# Production Configuration
+server:
+  port: 8093
+
+# AWS Configuration (Production)
+aws:
+  bedrock:
+    region: us-east-1
+    claude-model: anthropic.claude-3-sonnet-20240229-v1:0
+    embeddings-model: amazon.titan-embed-text-v1
+    max-tokens: 4000
+    temperature: 0.1
+    # Disable mock mode in production
+    mock-mode: false
+
+# OpenSearch Configuration (Production)
+opensearch:
+  endpoint: ${OPENSEARCH_ENDPOINT:https://search-domain.us-east-1.es.amazonaws.com}
+  index-name: ${OPENSEARCH_INDEX_NAME:knowledge-base}
+  vector-dimension: 1536
+  # Disable mock mode in production
+  mock-mode: false
+
+# Logging Configuration
+logging:
+  level:
+    com.opsguide: INFO
+    org.springframework.web: WARN
+    software.amazon.awssdk: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/opsguide/application.log
+
+# Production-specific settings
+spring:
+  profiles:
+    active: prod
+  jpa:
+    show-sql: false

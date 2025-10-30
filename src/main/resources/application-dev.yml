@@ -1,0 +1,35 @@
+# Development Configuration
+server:
+  port: 8093
+
+# AWS Configuration (Development)
+aws:
+  bedrock:
+    region: us-east-1
+    # Use mock responses in development
+    mock-mode: true
+
+# OpenSearch Configuration (Development)
+opensearch:
+  endpoint: http://localhost:9200
+  index-name: knowledge-base-dev
+  vector-dimension: 1536
+  # Use mock responses in development
+  mock-mode: true
+
+# Logging Configuration
+logging:
+  level:
+    com.opsguide: DEBUG
+    org.springframework.web: DEBUG
+    software.amazon.awssdk: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Development-specific settings
+spring:
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true

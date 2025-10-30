@@ -1,0 +1,62 @@
+server:
+  port: 8093
+
+spring:
+  application:
+    name: ops-guide-java
+  
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+  
+  task:
+    execution:
+      pool:
+        core-size: 10
+        max-size: 50
+        queue-capacity: 100
+        thread-name-prefix: "OpsGuide-Async-"
+      thread-name-prefix: "OpsGuide-"
+
+# AWS Configuration
+aws:
+  bedrock:
+    region: us-east-1
+    claude-model: anthropic.claude-3-sonnet-20240229-v1:0
+    embeddings-model: amazon.titan-embed-text-v1
+    max-tokens: 4000
+    temperature: 0.1
+
+# OpenSearch Configuration
+opensearch:
+  endpoint: http://localhost:9200
+  index-name: knowledge-base
+  vector-dimension: 1536
+
+# Logging Configuration
+logging:
+  level:
+    com.opsguide: DEBUG
+    org.springframework.web: INFO
+    software.amazon.awssdk: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+# Async Configuration (moved to spring section above)

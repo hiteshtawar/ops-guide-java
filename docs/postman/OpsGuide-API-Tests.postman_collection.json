@@ -1,0 +1,356 @@
+{
+  "info": {
+    "name": "OpsGuide Java API Tests",
+    "description": "Comprehensive test collection for OpsGuide Java API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/health",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "API Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Core Mode Tests",
+      "item": [
+        {
+          "name": "Cancel Case - Basic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "test-user"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"cancel case CASE-2024-001\",\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/request",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "request"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Case - Natural Language",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "test-user"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"I need to cancel the case CASE-2024-002\",\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/request",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "request"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Case Status - Basic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "test-user"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"change case status to completed for CASE-2024-001\",\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/request",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "request"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Case Status - Accessioning",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "test-user"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"update CASE-2024-002 status to accessioning\",\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/request",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "request"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "RAG Mode Tests",
+      "item": [
+        {
+          "name": "Cancel Case - RAG Mode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "test-user"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"cancel case CASE-2024-001\",\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/request?mode=rag",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "request"],
+              "query": [
+                {
+                  "key": "mode",
+                  "value": "rag"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Case Status - RAG Mode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "test-user"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"change case status to completed for CASE-2024-002\",\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/request?mode=rag",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "request"],
+              "query": [
+                {
+                  "key": "mode",
+                  "value": "rag"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Case Management API",
+      "item": [
+        {
+          "name": "Get Case Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/cases/2024-001/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "cases", "2024-001", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Case Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"reason\": \"pathologist_signoff\",\n  \"notes\": \"Case completed successfully\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/cases/2024-001/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "cases", "2024-001", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"operational_request\",\n  \"notes\": \"Cancelled via OpsGuide\",\n  \"notify_stakeholders\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/cases/2024-001/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "cases", "2024-001", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Cancellation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/cases/2024-001/cancel/preview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "cases", "2024-001", "cancel", "preview"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Case Dependencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/cases/2024-001/dependencies",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "cases", "2024-001", "dependencies"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Edge Cases",
+      "item": [
+        {
+          "name": "Invalid Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "test-user"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"do something random\",\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/request",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "request"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Case Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v2/cases/999/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "cases", "999", "status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8093"
+    }
+  ]
+}
