@@ -1,7 +1,7 @@
 package com.opsguide.service;
 
 import com.opsguide.model.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -10,19 +10,13 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@RequiredArgsConstructor
 public class RAGOrchestrator {
     
-    @Autowired
-    private EmbeddingsService embeddingsService;
-    
-    @Autowired
-    private VectorSearchService vectorSearchService;
-    
-    @Autowired
-    private LLMService llmService;
-    
-    @Autowired
-    private PatternClassifier patternClassifier;
+    private final EmbeddingsService embeddingsService;
+    private final VectorSearchService vectorSearchService;
+    private final LLMService llmService;
+    private final PatternClassifier patternClassifier;
     
     @Async
     public CompletableFuture<OperationalResponse> processWithRAG(OperationalRequest request) {

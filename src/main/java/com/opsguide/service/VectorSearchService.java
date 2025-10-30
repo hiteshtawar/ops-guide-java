@@ -113,29 +113,13 @@ public class VectorSearchService {
         return chunks;
     }
     
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
     public static class KnowledgeChunk {
         private String content;
         private String source;
         private String type;
         private double score;
-        
-        public KnowledgeChunk() {}
-        
-        public KnowledgeChunk(String content, String source, String type, double score) {
-            this.content = content;
-            this.source = source;
-            this.type = type;
-            this.score = score;
-        }
-        
-        // Getters and Setters
-        public String getContent() { return content; }
-        public void setContent(String content) { this.content = content; }
-        public String getSource() { return source; }
-        public void setSource(String source) { this.source = source; }
-        public String getType() { return type; }
-        public void setType(String type) { this.type = type; }
-        public double getScore() { return score; }
-        public void setScore(double score) { this.score = score; }
     }
 }

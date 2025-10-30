@@ -3,8 +3,7 @@ package com.opsguide.controller;
 import com.opsguide.model.*;
 import com.opsguide.service.PatternClassifier;
 import com.opsguide.service.RAGOrchestrator;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,13 +14,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class OpsGuideController {
     
-    @Autowired
-    private PatternClassifier patternClassifier;
-    
-    @Autowired
-    private RAGOrchestrator ragOrchestrator;
+    private final PatternClassifier patternClassifier;
+    private final RAGOrchestrator ragOrchestrator;
     
     @PostMapping("/request")
     public ResponseEntity<OperationalResponse> processRequest(

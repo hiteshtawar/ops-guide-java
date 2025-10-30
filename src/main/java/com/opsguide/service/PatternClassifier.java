@@ -1,7 +1,7 @@
 package com.opsguide.service;
 
 import com.opsguide.model.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
+@RequiredArgsConstructor
 public class PatternClassifier {
     
-    @Autowired
-    private EntityExtractor entityExtractor;
+    private final EntityExtractor entityExtractor;
     
     // Task identification patterns
     private static final Map<TaskId, Pattern[]> TASK_PATTERNS = Map.of(
