@@ -19,6 +19,7 @@ public class OpsGuideController {
     
     private final PatternClassifier patternClassifier;
     private final RAGOrchestrator ragOrchestrator;
+    private final com.opsguide.service.StepExecutionService stepExecutionService;
     
     @PostMapping("/request")
     public ResponseEntity<OperationalResponse> processRequest(
@@ -159,7 +160,7 @@ public class OpsGuideController {
     private OperationalResponse.NextSteps getNextSteps(TaskId taskId) {
         switch (taskId) {
             case CANCEL_ORDER:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Order cancellation request identified",
                     "knowledge/runbooks/cancel-order-runbook.md",
                     "knowledge/api-specs/order-management-api.md",
@@ -171,7 +172,7 @@ public class OpsGuideController {
                     }
                 );
             case UPDATE_ORDER_STATUS:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Order status update request identified",
                     "knowledge/runbooks/update-order-status-runbook.md",
                     "knowledge/api-specs/order-management-api.md",
@@ -183,7 +184,7 @@ public class OpsGuideController {
                     }
                 );
             case CANCEL_CASE:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Case cancellation request identified",
                     "knowledge/runbooks/cancel-case-runbook.md",
                     "knowledge/api-specs/case-management-api.md",
@@ -195,7 +196,7 @@ public class OpsGuideController {
                     }
                 );
             case UPDATE_CASE_STATUS:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Case status update request identified",
                     "knowledge/runbooks/update-case-status-runbook.md",
                     "knowledge/api-specs/case-management-api.md",
@@ -207,7 +208,7 @@ public class OpsGuideController {
                     }
                 );
             case UPDATE_SAMPLES:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Sample update request identified",
                     "knowledge/runbooks/update-samples-runbook.md",
                     "knowledge/api-specs/sample-management-api.md",
@@ -219,7 +220,7 @@ public class OpsGuideController {
                     }
                 );
             case UPDATE_STAIN:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Stain update request identified",
                     "knowledge/runbooks/update-stain-runbook.md",
                     "knowledge/api-specs/slide-management-api.md",
@@ -231,7 +232,7 @@ public class OpsGuideController {
                     }
                 );
             default:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Generic operational request identified",
                     "knowledge/runbooks/generic-operation-runbook.md",
                     "knowledge/api-specs/generic-api.md",
@@ -243,6 +244,120 @@ public class OpsGuideController {
                     }
                 );
         }
+    }
+    
+    private OperationalResponse.NextSteps createNextStepsWithMetadata(
+            String description, String runbook, String apiSpec, String[] typicalSteps) {
+        
+        OperationalResponse.NextSteps.StepExecutionMetadata[] metadata = 
+            new OperationalResponse.NextSteps.StepExecutionMetadata[typicalSteps.length];
+        
+        for (int i = 0; i < typicalSteps.length; i++) {
+            String stepName = typicalSteps[i];
+            boolean autoExecutable = isAutoExecutable(stepName);
+            boolean requiresApproval = requiresApproval(stepName);
+            String stepType = determineStepType(stepName);
+            String apiEndpoint = getApiEndpointForStep(stepName, stepType);
+            String httpMethod = getHttpMethodForStep(stepName, stepType);
+            Map<String, Object> apiParameters = getApiParametersForStep(stepName, stepType);
+            
+            metadata[i] = new OperationalResponse.NextSteps.StepExecutionMetadata(
+                stepName, autoExecutable, requiresApproval, stepType, apiEndpoint, httpMethod, apiParameters
+            );
+        }
+        
+        OperationalResponse.NextSteps nextSteps = new OperationalResponse.NextSteps(
+            description, runbook, apiSpec, typicalSteps, metadata
+        );
+        return nextSteps;
+    }
+    
+    private String getApiEndpointForStep(String stepName, String stepType) {
+        String lower = stepName.toLowerCase();
+        // Determine endpoint based on step type and name
+        if (stepType.equals("VALIDATION")) {
+            if (lower.contains("case")) {
+                return "/api/v2/cases/{case_id}/status";
+            } else if (lower.contains("order")) {
+                return "/api/v2/orders/{order_id}/status";
+            }
+        } else if (stepType.equals("PERMISSION_CHECK")) {
+            return "/api/v2/users/{user_id}/roles";
+        } else if (stepType.equals("API_EXECUTION")) {
+            if (lower.contains("cancel") && lower.contains("case")) {
+                return "/api/v2/cases/{case_id}/cancel";
+            } else if (lower.contains("update") && lower.contains("case")) {
+                return "/api/v2/cases/{case_id}/status";
+            } else if (lower.contains("cancel") && lower.contains("order")) {
+                return "/api/v2/orders/{order_id}/cancel";
+            }
+        } else if (stepType.equals("VERIFICATION")) {
+            if (lower.contains("case")) {
+                return "/api/v2/cases/{case_id}/status";
+            } else if (lower.contains("order")) {
+                return "/api/v2/orders/{order_id}/status";
+            }
+        }
+        return null;
+    }
+    
+    private String getHttpMethodForStep(String stepName, String stepType) {
+        if (stepType.equals("API_EXECUTION")) {
+            String lower = stepName.toLowerCase();
+            if (lower.contains("cancel")) {
+                return "POST";
+            } else if (lower.contains("update")) {
+                return "PATCH";
+            }
+        }
+        return "GET"; // Default for validation, permission checks, verification
+    }
+    
+    private Map<String, Object> getApiParametersForStep(String stepName, String stepType) {
+        Map<String, Object> params = new java.util.HashMap<>();
+        String lower = stepName.toLowerCase();
+        
+        if (stepType.equals("API_EXECUTION")) {
+            if (lower.contains("cancel")) {
+                params.put("reason", "operational_request");
+                params.put("notify_stakeholders", true);
+            } else if (lower.contains("update") && lower.contains("status")) {
+                params.put("action", "update_status");
+            }
+        }
+        
+        return params;
+    }
+    
+    private boolean isAutoExecutable(String stepName) {
+        String lower = stepName.toLowerCase();
+        // Auto-executable: validation, permission checks, verification
+        return lower.contains("validate") || 
+               lower.contains("check") && (lower.contains("permission") || lower.contains("exist")) ||
+               lower.contains("verify");
+    }
+    
+    private boolean requiresApproval(String stepName) {
+        String lower = stepName.toLowerCase();
+        // Requires approval: execution steps
+        return lower.contains("execute") || 
+               lower.contains("run") ||
+               (lower.contains("cancel") && lower.contains("via")) ||
+               (lower.contains("update") && lower.contains("via"));
+    }
+    
+    private String determineStepType(String stepName) {
+        String lower = stepName.toLowerCase();
+        if (lower.contains("validate") || (lower.contains("check") && lower.contains("exist"))) {
+            return "VALIDATION";
+        } else if (lower.contains("permission")) {
+            return "PERMISSION_CHECK";
+        } else if (lower.contains("execute") || lower.contains("via")) {
+            return "API_EXECUTION";
+        } else if (lower.contains("verify") || lower.contains("confirm")) {
+            return "VERIFICATION";
+        }
+        return "VALIDATION";
     }
     
     private OperationalResponse createErrorResponse(String message, String requestId) {
@@ -268,13 +383,43 @@ public class OpsGuideController {
         response.setClassification(classification);
         
         // Create error next steps
-        OperationalResponse.NextSteps nextSteps = new OperationalResponse.NextSteps();
-        nextSteps.setDescription("Error: " + message);
-        nextSteps.setRunbook("knowledge/runbooks/error-handling.md");
-        nextSteps.setApiSpec("knowledge/api-specs/error-api.md");
-        nextSteps.setTypicalSteps(new String[]{"Review error message", "Check request format", "Retry with corrected data"});
+        String[] errorSteps = new String[]{"Review error message", "Check request format", "Retry with corrected data"};
+        OperationalResponse.NextSteps.StepExecutionMetadata[] errorMetadata = 
+            new OperationalResponse.NextSteps.StepExecutionMetadata[errorSteps.length];
+        for (int i = 0; i < errorSteps.length; i++) {
+            errorMetadata[i] = new OperationalResponse.NextSteps.StepExecutionMetadata(
+                errorSteps[i], true, false, "VALIDATION", null, "GET", new java.util.HashMap<>()
+            );
+        }
+        OperationalResponse.NextSteps nextSteps = new OperationalResponse.NextSteps(
+            "Error: " + message,
+            "knowledge/runbooks/error-handling.md",
+            "knowledge/api-specs/error-api.md",
+            errorSteps,
+            errorMetadata
+        );
         response.setNextSteps(nextSteps);
         
         return response;
     }
+    
+    @PostMapping("/steps/execute")
+    public ResponseEntity<com.opsguide.model.StepExecutionResponse> executeStep(
+            @RequestBody com.opsguide.model.StepExecutionRequest request,
+            @RequestHeader("X-User-ID") String userId) {
+        
+        try {
+            com.opsguide.model.StepExecutionResponse response = stepExecutionService.executeStep(request, userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(com.opsguide.model.StepExecutionResponse.builder()
+                    .stepId(request.getStepIndex())
+                    .requestId(request.getRequestId())
+                    .status(com.opsguide.model.StepExecution.StepStatus.FAILED)
+                    .errorMessage("Execution failed: " + e.getMessage())
+                    .build());
+        }
+    }
+    
 }

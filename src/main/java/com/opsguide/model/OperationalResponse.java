@@ -48,5 +48,19 @@ public class OperationalResponse {
         private String runbook;
         private String apiSpec;
         private String[] typicalSteps;
+        private StepExecutionMetadata[] stepMetadata;
+        
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class StepExecutionMetadata {
+            private String stepName;
+            private Boolean autoExecutable;
+            private Boolean requiresApproval;
+            private String stepType; // VALIDATION, PERMISSION_CHECK, API_EXECUTION, VERIFICATION
+            private String apiEndpoint; // API endpoint to call for this step
+            private String httpMethod; // GET, POST, PATCH, DELETE
+            private Map<String, Object> apiParameters; // Parameters for the API call
+        }
     }
 }

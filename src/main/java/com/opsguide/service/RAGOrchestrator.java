@@ -164,7 +164,55 @@ public class RAGOrchestrator {
         // Extract steps from LLM response or use default
         String[] typicalSteps = extractStepsFromLLMResponse(llmResponse, taskId);
         
-        return new OperationalResponse.NextSteps(description, runbook, apiSpec, typicalSteps);
+        // Create metadata for each step
+        OperationalResponse.NextSteps.StepExecutionMetadata[] metadata = 
+            new OperationalResponse.NextSteps.StepExecutionMetadata[typicalSteps.length];
+        
+        for (int i = 0; i < typicalSteps.length; i++) {
+            String stepName = typicalSteps[i];
+            boolean autoExecutable = isAutoExecutable(stepName);
+            boolean requiresApproval = requiresApproval(stepName);
+            String stepType = determineStepType(stepName);
+            
+            String apiEndpoint = getApiEndpointForStep(stepName, stepType);
+            String httpMethod = getHttpMethodForStep(stepName, stepType);
+            Map<String, Object> apiParameters = getApiParametersForStep(stepName, stepType);
+            
+            metadata[i] = new OperationalResponse.NextSteps.StepExecutionMetadata(
+                stepName, autoExecutable, requiresApproval, stepType, apiEndpoint, httpMethod, apiParameters
+            );
+        }
+        
+        return new OperationalResponse.NextSteps(description, runbook, apiSpec, typicalSteps, metadata);
+    }
+    
+    private boolean isAutoExecutable(String stepName) {
+        String lower = stepName.toLowerCase();
+        return lower.contains("validate") || 
+               (lower.contains("check") && (lower.contains("permission") || lower.contains("exist"))) ||
+               lower.contains("verify");
+    }
+    
+    private boolean requiresApproval(String stepName) {
+        String lower = stepName.toLowerCase();
+        return lower.contains("execute") || 
+               lower.contains("run") ||
+               (lower.contains("cancel") && lower.contains("via")) ||
+               (lower.contains("update") && lower.contains("via"));
+    }
+    
+    private String determineStepType(String stepName) {
+        String lower = stepName.toLowerCase();
+        if (lower.contains("validate") || (lower.contains("check") && lower.contains("exist"))) {
+            return "VALIDATION";
+        } else if (lower.contains("permission")) {
+            return "PERMISSION_CHECK";
+        } else if (lower.contains("execute") || lower.contains("via")) {
+            return "API_EXECUTION";
+        } else if (lower.contains("verify") || lower.contains("confirm")) {
+            return "VERIFICATION";
+        }
+        return "VALIDATION";
     }
     
     private OperationalResponse.NextSteps getNextSteps(TaskId taskId) {
@@ -174,7 +222,7 @@ public class RAGOrchestrator {
         
         switch (taskId) {
             case CANCEL_ORDER:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Order cancellation request identified",
                     "knowledge/runbooks/cancel-order-runbook.md",
                     "knowledge/api-specs/order-management-api.md",
@@ -186,7 +234,7 @@ public class RAGOrchestrator {
                     }
                 );
             case UPDATE_ORDER_STATUS:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Order status update request identified",
                     "knowledge/runbooks/update-order-status-runbook.md",
                     "knowledge/api-specs/order-management-api.md",
@@ -198,7 +246,7 @@ public class RAGOrchestrator {
                     }
                 );
             case CANCEL_CASE:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Case cancellation request identified",
                     "knowledge/runbooks/cancel-case-runbook.md",
                     "knowledge/api-specs/case-management-api.md",
@@ -210,7 +258,7 @@ public class RAGOrchestrator {
                     }
                 );
             case UPDATE_CASE_STATUS:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Case status update request identified",
                     "knowledge/runbooks/update-case-status-runbook.md",
                     "knowledge/api-specs/case-management-api.md",
@@ -222,7 +270,7 @@ public class RAGOrchestrator {
                     }
                 );
             case UPDATE_SAMPLES:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Sample update request identified",
                     "knowledge/runbooks/update-samples-runbook.md",
                     "knowledge/api-specs/sample-management-api.md",
@@ -234,7 +282,7 @@ public class RAGOrchestrator {
                     }
                 );
             case UPDATE_STAIN:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Stain update request identified",
                     "knowledge/runbooks/update-stain-runbook.md",
                     "knowledge/api-specs/slide-management-api.md",
@@ -246,7 +294,7 @@ public class RAGOrchestrator {
                     }
                 );
             default:
-                return new OperationalResponse.NextSteps(
+                return createNextStepsWithMetadata(
                     "Generic operational request identified",
                     "knowledge/runbooks/generic-operation-runbook.md",
                     "knowledge/api-specs/generic-api.md",
@@ -258,6 +306,85 @@ public class RAGOrchestrator {
                     }
                 );
         }
+    }
+    
+    private OperationalResponse.NextSteps createNextStepsWithMetadata(
+            String description, String runbook, String apiSpec, String[] typicalSteps) {
+        
+        OperationalResponse.NextSteps.StepExecutionMetadata[] metadata = 
+            new OperationalResponse.NextSteps.StepExecutionMetadata[typicalSteps.length];
+        
+        for (int i = 0; i < typicalSteps.length; i++) {
+            String stepName = typicalSteps[i];
+            boolean autoExecutable = isAutoExecutable(stepName);
+            boolean requiresApproval = requiresApproval(stepName);
+            String stepType = determineStepType(stepName);
+            String apiEndpoint = getApiEndpointForStep(stepName, stepType);
+            String httpMethod = getHttpMethodForStep(stepName, stepType);
+            Map<String, Object> apiParameters = getApiParametersForStep(stepName, stepType);
+            
+            metadata[i] = new OperationalResponse.NextSteps.StepExecutionMetadata(
+                stepName, autoExecutable, requiresApproval, stepType, apiEndpoint, httpMethod, apiParameters
+            );
+        }
+        
+        return new OperationalResponse.NextSteps(description, runbook, apiSpec, typicalSteps, metadata);
+    }
+    
+    private String getApiEndpointForStep(String stepName, String stepType) {
+        String lower = stepName.toLowerCase();
+        if (stepType.equals("VALIDATION")) {
+            if (lower.contains("case")) {
+                return "/api/v2/cases/{case_id}/status";
+            } else if (lower.contains("order")) {
+                return "/api/v2/orders/{order_id}/status";
+            }
+        } else if (stepType.equals("PERMISSION_CHECK")) {
+            return "/api/v2/users/{user_id}/roles";
+        } else if (stepType.equals("API_EXECUTION")) {
+            if (lower.contains("cancel") && lower.contains("case")) {
+                return "/api/v2/cases/{case_id}/cancel";
+            } else if (lower.contains("update") && lower.contains("case")) {
+                return "/api/v2/cases/{case_id}/status";
+            } else if (lower.contains("cancel") && lower.contains("order")) {
+                return "/api/v2/orders/{order_id}/cancel";
+            }
+        } else if (stepType.equals("VERIFICATION")) {
+            if (lower.contains("case")) {
+                return "/api/v2/cases/{case_id}/status";
+            } else if (lower.contains("order")) {
+                return "/api/v2/orders/{order_id}/status";
+            }
+        }
+        return null;
+    }
+    
+    private String getHttpMethodForStep(String stepName, String stepType) {
+        if (stepType.equals("API_EXECUTION")) {
+            String lower = stepName.toLowerCase();
+            if (lower.contains("cancel")) {
+                return "POST";
+            } else if (lower.contains("update")) {
+                return "PATCH";
+            }
+        }
+        return "GET";
+    }
+    
+    private Map<String, Object> getApiParametersForStep(String stepName, String stepType) {
+        Map<String, Object> params = new java.util.HashMap<>();
+        String lower = stepName.toLowerCase();
+        
+        if (stepType.equals("API_EXECUTION")) {
+            if (lower.contains("cancel")) {
+                params.put("reason", "operational_request");
+                params.put("notify_stakeholders", true);
+            } else if (lower.contains("update") && lower.contains("status")) {
+                params.put("action", "update_status");
+            }
+        }
+        
+        return params;
     }
     
     private String[] extractStepsFromLLMResponse(String llmResponse, TaskId taskId) {
